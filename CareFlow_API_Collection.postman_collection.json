@@ -1,0 +1,1339 @@
+{
+  "info": {
+    "name": "CareFlow EHR & Pharmacy API Collection",
+    "description": "Complete API collection for CareFlow EHR system with pharmacy integration. Includes all endpoints with proper authentication, sample data, and test scripts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "pharmacyBaseUrl",
+      "value": "http://localhost:5001/api",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "patientId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "appointmentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "medicationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "prescriptionId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication (EHR)",
+      "description": "EHR system authentication endpoints",
+      "item": [
+        {
+          "name": "Register Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.userId) {",
+                  "        pm.collectionVariables.set('userId', response.data.userId);",
+                  "    }",
+                  "    pm.test('Registration successful', function () {",
+                  "        pm.expect(response.status).to.eql('success');",
+                  "        pm.expect(response.message).to.include('Registration successful');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "        pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "    }",
+                  "    pm.test('Login successful', function () {",
+                  "        pm.expect(response.status).to.eql('success');",
+                  "        pm.expect(response.data.accessToken).to.exist;",
+                  "        pm.expect(response.data.refreshToken).to.exist;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    }",
+                  "    pm.test('Token refreshed successfully', function () {",
+                  "        pm.expect(response.status).to.eql('success');",
+                  "        pm.expect(response.data.accessToken).to.exist;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Logout successful', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "pm.collectionVariables.set('accessToken', '');",
+                  "pm.collectionVariables.set('refreshToken', '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email/{{emailToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-email", "{{emailToken}}"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"newpassword123\",\n  \"confirmPassword\": \"newpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password/{{resetToken}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password", "{{resetToken}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 User Management",
+      "description": "User profile and management endpoints",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "me"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Profile retrieved successfully', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.status).to.eql('success');",
+                  "    pm.expect(response.data).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "👨‍⚕️ Doctor Operations",
+      "description": "Doctor-specific endpoints",
+      "item": [
+        {
+          "name": "Get Doctor Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor", "profile", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update Doctor Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialization\": \"Cardiology\",\n  \"licenseNumber\": \"DOC123456\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Medical St, City, State 12345\",\n  \"bio\": \"Experienced cardiologist with 10+ years of practice\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/doctor/profile/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor", "profile", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Doctor Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/appointments/me?page=1&perPage=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor", "appointments", "me"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Appointment Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"notes\": \"Patient examination completed successfully\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/doctor/appointments/{{appointmentId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor", "appointments", "{{appointmentId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Patient Record",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/patients/{{patientId}}/record",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor", "patients", "{{patientId}}", "record"]
+            }
+          }
+        },
+        {
+          "name": "Add Medical Visit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visitDate\": \"2024-01-15T10:00:00Z\",\n  \"diagnosis\": \"Hypertension\",\n  \"symptoms\": [\"Headache\", \"Dizziness\"],\n  \"treatment\": \"Prescribed medication and lifestyle changes\",\n  \"notes\": \"Patient responded well to treatment\",\n  \"vitalSigns\": {\n    \"bloodPressure\": \"140/90\",\n    \"heartRate\": \"80\",\n    \"temperature\": \"98.6\",\n    \"weight\": \"70kg\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/doctor/patients/{{patientId}}/visits",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor", "patients", "{{patientId}}", "visits"]
+            }
+          }
+        },
+        {
+          "name": "Search Medications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/medications/search?search=aspirin",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor", "medications", "search"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "aspirin"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Available Medications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctor/medications/available",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor", "medications", "available"]
+            }
+          }
+        },
+        {
+          "name": "Send Prescription to Pharmacy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientName\": \"John Doe\",\n  \"patientEmail\": \"john.doe@example.com\",\n  \"doctorName\": \"Dr. Smith\",\n  \"clinicCode\": \"CLINIC_001\",\n  \"medications\": [\n    {\n      \"name\": \"Aspirin\",\n      \"dosage\": \"100mg\",\n      \"frequency\": \"Once daily\",\n      \"duration\": \"7 days\",\n      \"instructions\": \"Take with food\"\n    }\n  ],\n  \"notes\": \"Patient should follow up in 1 week\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/doctor/prescriptions/send-to-pharmacy",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctor", "prescriptions", "send-to-pharmacy"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤒 Patient Operations",
+      "description": "Patient-specific endpoints",
+      "item": [
+        {
+          "name": "Get Patient Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/patient/appointments?page=1&perPage=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["patient", "appointments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"appointmentDate\": \"2024-01-20T14:00:00Z\",\n  \"reason\": \"Regular checkup\",\n  \"notes\": \"Annual health examination\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/patient/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["patient", "appointments"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.appointmentId) {",
+                  "        pm.collectionVariables.set('appointmentId', response.data.appointmentId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Schedule conflict\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/patient/appointments/{{appointmentId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["patient", "appointments", "{{appointmentId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Get My Medical Record",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/patient/record/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["patient", "record", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/patient/notifications/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["patient", "notifications", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👩‍⚕️ Nurse Operations",
+      "description": "Nurse-specific endpoints",
+      "item": [
+        {
+          "name": "Get Nurse Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/nurse/profile/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["nurse", "profile", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Nurse Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/nurse/appointments/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["nurse", "appointments", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Assigned Patients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/nurse/patients/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["nurse", "patients", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Secretary Operations",
+      "description": "Secretary-specific endpoints",
+      "item": [
+        {
+          "name": "Get Secretary Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/secretary/profile/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["secretary", "profile", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get All Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/secretary/appointments?page=1&perPage=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["secretary", "appointments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Patients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/secretary/patients?page=1&perPage=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["secretary", "patients"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Admin Operations",
+      "description": "Administrative endpoints",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?page=1&perPage=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get System Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/logs?page=1&perPage=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "logs"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get System Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/notifications?page=1&perPage=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "notifications"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💊 Pharmacy Authentication",
+      "description": "Pharmacy system authentication endpoints",
+      "item": [
+        {
+          "name": "Register Pharmacy User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Pharmacy Admin\",\n  \"email\": \"admin@pharmacy.com\",\n  \"password\": \"pharmacy123\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/auth/register",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Pharmacy Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@pharmacy.com\",\n  \"password\": \"pharmacy123\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/auth/login",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.accessToken) {",
+                  "        pm.collectionVariables.set('pharmacyAccessToken', response.data.accessToken);",
+                  "        pm.collectionVariables.set('pharmacyRefreshToken', response.data.refreshToken);",
+                  "    }",
+                  "    pm.test('Pharmacy login successful', function () {",
+                  "        pm.expect(response.status).to.eql('success');",
+                  "        pm.expect(response.data.accessToken).to.exist;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pharmacy Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{pharmacyRefreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/auth/refresh",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Pharmacy Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{pharmacyRefreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/auth/logout",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Get Pharmacy Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/auth/profile",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Pharmacy Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Updated Pharmacy Admin\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Pharmacy St, City, State 12345\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/auth/profile",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "auth", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Pharmacy Admin Management",
+      "description": "Pharmacy user management endpoints",
+      "item": [
+        {
+          "name": "Get All Pharmacy Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/admin/users?page=1&perPage=20",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Pharmacy User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"New Pharmacist\",\n  \"email\": \"pharmacist@pharmacy.com\",\n  \"password\": \"pharmacy123\",\n  \"role\": \"pharmacist\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"456 Pharmacy Ave, City, State 12345\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/admin/users",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "Get Pharmacy User Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/admin/users/stats",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "admin", "users", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Pharmacy User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/admin/users/{{pharmacyUserId}}",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "admin", "users", "{{pharmacyUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Pharmacy User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Updated Pharmacist Name\",\n  \"email\": \"updated.pharmacist@pharmacy.com\",\n  \"role\": \"pharmacist\",\n  \"phone\": \"+1987654321\",\n  \"address\": \"789 Updated St, City, State 54321\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/admin/users/{{pharmacyUserId}}",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "admin", "users", "{{pharmacyUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Pharmacy User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/admin/users/{{pharmacyUserId}}",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "admin", "users", "{{pharmacyUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Change Pharmacy User Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPassword\": \"newpassword123\",\n  \"confirmPassword\": \"newpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/pharmacy/admin/users/{{pharmacyUserId}}/password",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["pharmacy", "admin", "users", "{{pharmacyUserId}}", "password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💊 Medication Management",
+      "description": "Medication inventory and management endpoints",
+      "item": [
+        {
+          "name": "Get All Medications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/medications?page=1&perPage=20",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["medications"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Medication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Aspirin\",\n  \"genericName\": \"Acetylsalicylic Acid\",\n  \"manufacturer\": \"Bayer\",\n  \"dosageForm\": \"Tablet\",\n  \"strength\": \"100mg\",\n  \"description\": \"Pain reliever and anti-inflammatory medication\",\n  \"category\": \"Analgesic\",\n  \"price\": 5.99,\n  \"stockQuantity\": 1000,\n  \"minStockLevel\": 50,\n  \"expiryDate\": \"2025-12-31\",\n  \"batchNumber\": \"ASP2024001\",\n  \"requiresPrescription\": false\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/medications",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["medications"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.medicationId) {",
+                  "        pm.collectionVariables.set('medicationId', response.data.medicationId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Medication Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/medications/stats",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["medications", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Low Stock Medications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/medications/low-stock?threshold=100",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["medications", "low-stock"],
+              "query": [
+                {
+                  "key": "threshold",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Medication by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/medications/{{medicationId}}",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["medications", "{{medicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Medication",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Aspirin\",\n  \"genericName\": \"Acetylsalicylic Acid\",\n  \"manufacturer\": \"Updated Bayer\",\n  \"dosageForm\": \"Tablet\",\n  \"strength\": \"100mg\",\n  \"description\": \"Updated pain reliever and anti-inflammatory medication\",\n  \"category\": \"Analgesic\",\n  \"price\": 6.99,\n  \"stockQuantity\": 1200,\n  \"minStockLevel\": 75,\n  \"expiryDate\": \"2025-12-31\",\n  \"batchNumber\": \"ASP2024002\",\n  \"requiresPrescription\": false\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/medications/{{medicationId}}",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["medications", "{{medicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Medication",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/medications/{{medicationId}}",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["medications", "{{medicationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Medication Stock",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stockQuantity\": 1500,\n  \"operation\": \"add\",\n  \"reason\": \"New shipment received\",\n  \"notes\": \"Added 500 units to existing stock\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/medications/{{medicationId}}/stock",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["medications", "{{medicationId}}", "stock"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Prescription Management",
+      "description": "Prescription processing and management endpoints",
+      "item": [
+        {
+          "name": "Create Prescription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientName\": \"John Doe\",\n  \"patientEmail\": \"john.doe@example.com\",\n  \"doctorName\": \"Dr. Smith\",\n  \"clinicCode\": \"CLINIC_001\",\n  \"medications\": [\n    {\n      \"name\": \"Aspirin\",\n      \"dosage\": \"100mg\",\n      \"frequency\": \"Once daily\",\n      \"duration\": \"7 days\",\n      \"instructions\": \"Take with food\",\n      \"quantity\": 30\n    },\n    {\n      \"name\": \"Metformin\",\n      \"dosage\": \"500mg\",\n      \"frequency\": \"Twice daily\",\n      \"duration\": \"30 days\",\n      \"instructions\": \"Take with meals\",\n      \"quantity\": 60\n    }\n  ],\n  \"notes\": \"Patient should follow up in 2 weeks\",\n  \"priority\": \"normal\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/prescriptions",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["prescriptions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.prescriptionId) {",
+                  "        pm.collectionVariables.set('prescriptionId', response.data.prescriptionId);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Prescriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/prescriptions?page=1&perPage=20&status=pending",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["prescriptions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Prescriptions by Patient",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/prescriptions/search/John Doe",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["prescriptions", "search", "John Doe"]
+            }
+          }
+        },
+        {
+          "name": "Update Prescription Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"notes\": \"Prescription filled successfully\",\n  \"pharmacistNotes\": \"Patient advised to take with food\",\n  \"dispensedBy\": \"Pharmacist Name\",\n  \"dispensedAt\": \"2024-01-15T10:30:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{pharmacyBaseUrl}}/prescriptions/{{prescriptionId}}/status",
+              "host": ["{{pharmacyBaseUrl}}"],
+              "path": ["prescriptions", "{{prescriptionId}}", "status"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "// Add any global setup here"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "pm.test('Response time is less than 5000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "pm.test('Response has valid JSON', function () {",
+          "    pm.response.to.have.jsonBody();",
+          "});"
+        ]
+      }
+    }
+  ]
+}

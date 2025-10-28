@@ -1,0 +1,287 @@
+{
+  "testData": {
+    "users": {
+      "patient": {
+        "fullName": "John Doe",
+        "email": "john.doe@example.com",
+        "password": "password123",
+        "phone": "+1234567890",
+        "dateOfBirth": "1990-01-15",
+        "gender": "male",
+        "address": "123 Main St, City, State 12345"
+      },
+      "doctor": {
+        "fullName": "Dr. Sarah Smith",
+        "email": "doctor@example.com",
+        "password": "doctor123",
+        "specialization": "Cardiology",
+        "licenseNumber": "DOC123456",
+        "phone": "+1234567891",
+        "address": "456 Medical Ave, City, State 12345",
+        "bio": "Experienced cardiologist with 10+ years of practice"
+      },
+      "nurse": {
+        "fullName": "Nurse Jane Wilson",
+        "email": "nurse@example.com",
+        "password": "nurse123",
+        "licenseNumber": "NUR123456",
+        "phone": "+1234567892",
+        "address": "789 Healthcare Blvd, City, State 12345"
+      },
+      "secretary": {
+        "fullName": "Secretary Mike Johnson",
+        "email": "secretary@example.com",
+        "password": "secretary123",
+        "phone": "+1234567893",
+        "address": "321 Office St, City, State 12345"
+      },
+      "admin": {
+        "fullName": "Admin User",
+        "email": "admin@example.com",
+        "password": "admin123",
+        "phone": "+1234567894",
+        "address": "654 Admin Ave, City, State 12345"
+      }
+    },
+    "pharmacyUsers": {
+      "admin": {
+        "fullName": "Pharmacy Admin",
+        "email": "admin@pharmacy.com",
+        "password": "pharmacy123",
+        "role": "admin",
+        "phone": "+1234567895",
+        "address": "123 Pharmacy St, City, State 12345"
+      },
+      "pharmacist": {
+        "fullName": "Pharmacist Tom Brown",
+        "email": "pharmacist@pharmacy.com",
+        "password": "pharmacy123",
+        "role": "pharmacist",
+        "phone": "+1234567896",
+        "address": "456 Drug Store Ave, City, State 12345"
+      },
+      "staff": {
+        "fullName": "Pharmacy Staff",
+        "email": "staff@pharmacy.com",
+        "password": "pharmacy123",
+        "role": "staff",
+        "phone": "+1234567897",
+        "address": "789 Medicine Blvd, City, State 12345"
+      }
+    },
+    "appointments": {
+      "newAppointment": {
+        "doctorId": "{{doctorId}}",
+        "appointmentDate": "2024-01-20T14:00:00Z",
+        "reason": "Regular checkup",
+        "notes": "Annual health examination"
+      },
+      "followUpAppointment": {
+        "doctorId": "{{doctorId}}",
+        "appointmentDate": "2024-02-15T10:00:00Z",
+        "reason": "Follow-up visit",
+        "notes": "Post-treatment follow-up"
+      }
+    },
+    "medicalVisits": {
+      "cardiologyVisit": {
+        "visitDate": "2024-01-15T10:00:00Z",
+        "diagnosis": "Hypertension",
+        "symptoms": ["Headache", "Dizziness", "Chest pain"],
+        "treatment": "Prescribed medication and lifestyle changes",
+        "notes": "Patient responded well to treatment",
+        "vitalSigns": {
+          "bloodPressure": "140/90",
+          "heartRate": "80",
+          "temperature": "98.6",
+          "weight": "70kg",
+          "height": "175cm"
+        }
+      },
+      "generalCheckup": {
+        "visitDate": "2024-01-10T09:00:00Z",
+        "diagnosis": "General health check",
+        "symptoms": ["Fatigue"],
+        "treatment": "Rest and proper nutrition",
+        "notes": "Patient in good health",
+        "vitalSigns": {
+          "bloodPressure": "120/80",
+          "heartRate": "72",
+          "temperature": "98.4",
+          "weight": "68kg",
+          "height": "175cm"
+        }
+      }
+    },
+    "medications": {
+      "aspirin": {
+        "name": "Aspirin",
+        "genericName": "Acetylsalicylic Acid",
+        "manufacturer": "Bayer",
+        "dosageForm": "Tablet",
+        "strength": "100mg",
+        "description": "Pain reliever and anti-inflammatory medication",
+        "category": "Analgesic",
+        "price": 5.99,
+        "stockQuantity": 1000,
+        "minStockLevel": 50,
+        "expiryDate": "2025-12-31",
+        "batchNumber": "ASP2024001",
+        "requiresPrescription": false
+      },
+      "metformin": {
+        "name": "Metformin",
+        "genericName": "Metformin Hydrochloride",
+        "manufacturer": "Generic",
+        "dosageForm": "Tablet",
+        "strength": "500mg",
+        "description": "Antidiabetic medication for type 2 diabetes",
+        "category": "Antidiabetic",
+        "price": 12.99,
+        "stockQuantity": 500,
+        "minStockLevel": 25,
+        "expiryDate": "2025-06-30",
+        "batchNumber": "MET2024001",
+        "requiresPrescription": true
+      },
+      "amoxicillin": {
+        "name": "Amoxicillin",
+        "genericName": "Amoxicillin Trihydrate",
+        "manufacturer": "Generic",
+        "dosageForm": "Capsule",
+        "strength": "250mg",
+        "description": "Antibiotic for bacterial infections",
+        "category": "Antibiotic",
+        "price": 8.99,
+        "stockQuantity": 750,
+        "minStockLevel": 30,
+        "expiryDate": "2025-03-31",
+        "batchNumber": "AMX2024001",
+        "requiresPrescription": true
+      }
+    },
+    "prescriptions": {
+      "cardiologyPrescription": {
+        "patientName": "John Doe",
+        "patientEmail": "john.doe@example.com",
+        "doctorName": "Dr. Sarah Smith",
+        "clinicCode": "CLINIC_001",
+        "medications": [
+          {
+            "name": "Aspirin",
+            "dosage": "100mg",
+            "frequency": "Once daily",
+            "duration": "30 days",
+            "instructions": "Take with food",
+            "quantity": 30
+          },
+          {
+            "name": "Metformin",
+            "dosage": "500mg",
+            "frequency": "Twice daily",
+            "duration": "30 days",
+            "instructions": "Take with meals",
+            "quantity": 60
+          }
+        ],
+        "notes": "Patient should follow up in 2 weeks",
+        "priority": "normal"
+      },
+      "antibioticPrescription": {
+        "patientName": "Jane Smith",
+        "patientEmail": "jane.smith@example.com",
+        "doctorName": "Dr. Michael Johnson",
+        "clinicCode": "CLINIC_001",
+        "medications": [
+          {
+            "name": "Amoxicillin",
+            "dosage": "250mg",
+            "frequency": "Three times daily",
+            "duration": "7 days",
+            "instructions": "Take with water",
+            "quantity": 21
+          }
+        ],
+        "notes": "Complete full course of antibiotics",
+        "priority": "high"
+      }
+    },
+    "pharmacyOperations": {
+      "stockUpdate": {
+        "stockQuantity": 1500,
+        "operation": "add",
+        "reason": "New shipment received",
+        "notes": "Added 500 units to existing stock"
+      },
+      "prescriptionStatusUpdate": {
+        "status": "completed",
+        "notes": "Prescription filled successfully",
+        "pharmacistNotes": "Patient advised to take with food",
+        "dispensedBy": "Pharmacist Name",
+        "dispensedAt": "2024-01-15T10:30:00Z"
+      }
+    },
+    "searchQueries": {
+      "medicationSearch": [
+        "aspirin",
+        "metformin",
+        "amoxicillin",
+        "pain",
+        "antibiotic"
+      ],
+      "patientSearch": [
+        "John Doe",
+        "Jane Smith",
+        "Mike Johnson"
+      ]
+    },
+    "pagination": {
+      "defaultPage": 1,
+      "defaultPerPage": 20,
+      "largePerPage": 50,
+      "smallPerPage": 10
+    },
+    "filters": {
+      "appointmentStatus": ["pending", "confirmed", "completed", "cancelled"],
+      "userRoles": ["patient", "doctor", "nurse", "secretary", "admin"],
+      "pharmacyRoles": ["admin", "pharmacist", "staff"],
+      "medicationCategories": ["Analgesic", "Antidiabetic", "Antibiotic", "Cardiovascular", "Respiratory"],
+      "prescriptionStatus": ["pending", "processing", "completed", "cancelled"],
+      "userStatus": ["active", "inactive", "suspended"]
+    }
+  },
+  "sampleResponses": {
+    "successResponse": {
+      "status": "success",
+      "message": "Operation completed successfully",
+      "data": {}
+    },
+    "errorResponse": {
+      "status": "error",
+      "message": "Error description",
+      "stack": null
+    },
+    "tokenResponse": {
+      "status": "success",
+      "message": "Login successful",
+      "data": {
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "expiresIn": 900000
+      }
+    },
+    "userResponse": {
+      "status": "success",
+      "message": "User retrieved successfully",
+      "data": {
+        "id": "64f1a2b3c4d5e6f7g8h9i0j1",
+        "fullName": "John Doe",
+        "email": "john.doe@example.com",
+        "role": "patient",
+        "isEmailVerified": true,
+        "createdAt": "2024-01-01T00:00:00Z",
+        "updatedAt": "2024-01-01T00:00:00Z"
+      }
+    }
+  }
+}
