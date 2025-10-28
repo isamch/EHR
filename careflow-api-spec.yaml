@@ -1,0 +1,3371 @@
+openapi: 3.0.3
+info:
+  title: CareFlow EHR & Pharmacy Integration API
+  version: '1.0.0'
+  description: >
+    Complete REST API for CareFlow EHR system with pharmacy integration.
+    Features JWT authentication, role-based access control, and seamless
+    prescription management between clinic and pharmacy systems.
+  contact:
+    name: CareFlow Development Team
+    email: support@careflow.com
+  license:
+    name: ISC
+servers:
+  - url: http://localhost:5000/api
+    description: CareFlow EHR Development Server
+  - url: http://localhost:5001/api
+    description: Pharmacy System Development Server
+tags:
+  - name: auth
+    description: Authentication and user management
+  - name: users
+    description: User profile management
+  - name: patients
+    description: Patient records and management
+  - name: appointments
+    description: Appointment scheduling and management
+  - name: doctors
+    description: Doctor-specific operations
+  - name: nurses
+    description: Nurse-specific operations
+  - name: secretaries
+    description: Secretary-specific operations
+  - name: admin
+    description: Administrative operations
+  - name: pharmacy
+    description: Pharmacy system endpoints (authentication, user management, medication management)
+  - name: medications
+    description: Medication management and inventory
+  - name: prescriptions
+    description: Prescription management and processing
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "error"
+        message:
+          type: string
+          description: Error description
+        stack:
+          type: string
+          nullable: true
+          description: Stack trace (only in development)
+      example:
+        status: "error"
+        message: "Patient name, doctor name, clinic code and medications are required"
+        stack: null
+
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        message:
+          type: string
+          description: Success message
+        data:
+          type: object
+          description: Response data
+
+    AuthRegister:
+      type: object
+      required: [fullName, email, password]
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Full name of the user
+        email:
+          type: string
+          format: email
+          description: Email address
+        password:
+          type: string
+          minLength: 6
+          description: Password
+      example:
+        fullName: "John Doe"
+        email: "john@example.com"
+        password: "password123"
+
+    AuthLogin:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      example:
+        email: "john@example.com"
+        password: "password123"
+
+    TokenResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        message:
+          type: string
+          example: "Login successful"
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+              description: JWT access token
+            refreshToken:
+              type: string
+              description: JWT refresh token
+            expiresIn:
+              type: integer
+              description: Token expiration time in milliseconds
+      example:
+        status: "success"
+        message: "Login successful"
+        data:
+          accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          expiresIn: 900000
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique user identifier
+        fullName:
+          type: string
+          description: Full name of the user
+        email:
+          type: string
+          format: email
+          description: Email address
+        role:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+              enum: [admin, doctor, nurse, secretary, patient]
+        status:
+          type: string
+          enum: [active, suspended, pending_verification]
+        isEmailVerified:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      example:
+        id: "64f1a2b3c4d5e6f7g8h9i0j1"
+        fullName: "John Doe"
+        email: "john@example.com"
+        role:
+          id: "64f1a2b3c4d5e6f7g8h9i0j2"
+          name: "patient"
+        status: "active"
+        isEmailVerified: true
+        createdAt: "2024-01-15T10:00:00.000Z"
+        updatedAt: "2024-01-15T10:00:00.000Z"
+
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        specialization:
+          type: string
+          description: Medical specialization
+        assignedNurse:
+          type: string
+          nullable: true
+          description: Assigned nurse ID
+        workingHours:
+          type: array
+          items:
+            type: object
+            properties:
+              dayOfWeek:
+                type: string
+                enum: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
+              timeSlots:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    startTime:
+                      type: string
+                      format: time
+                    endTime:
+                      type: string
+                      format: time
+                    isAvailable:
+                      type: boolean
+      example:
+        id: "64f1a2b3c4d5e6f7g8h9i0j1"
+        userId: "64f1a2b3c4d5e6f7g8h9i0j2"
+        specialization: "Cardiology"
+        assignedNurse: "64f1a2b3c4d5e6f7g8h9i0j3"
+        workingHours:
+          - dayOfWeek: "Monday"
+            timeSlots:
+              - startTime: "09:00"
+                endTime: "17:00"
+                isAvailable: true
+
+    Patient:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        patientRecord:
+          type: string
+          description: Patient record ID
+      example:
+        id: "64f1a2b3c4d5e6f7g8h9i0j1"
+        userId: "64f1a2b3c4d5e6f7g8h9i0j2"
+        patientRecord: "64f1a2b3c4d5e6f7g8h9i0j3"
+
+    PatientRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        bloodType:
+          type: string
+          enum: [A+, A-, B+, B-, AB+, AB-, O+, O-]
+        dateOfBirth:
+          type: string
+          format: date
+        address:
+          type: string
+        visits:
+          type: array
+          items:
+            $ref: '#/components/schemas/Visit'
+        createdAt:
+          type: string
+          format: date-time
+        lastUpdated:
+          type: string
+          format: date-time
+      example:
+        id: "64f1a2b3c4d5e6f7g8h9i0j1"
+        bloodType: "O+"
+        dateOfBirth: "1990-01-15"
+        address: "123 Main Street, City"
+        visits: []
+        createdAt: "2024-01-15T10:00:00.000Z"
+        lastUpdated: "2024-01-15T10:00:00.000Z"
+
+    Visit:
+      type: object
+      properties:
+        visitId:
+          type: string
+        date:
+          type: string
+          format: date-time
+        doctorId:
+          type: string
+        nurseId:
+          type: string
+          nullable: true
+        diagnosis:
+          type: array
+          items:
+            type: string
+        symptoms:
+          type: array
+          items:
+            type: string
+        treatments:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              dosage:
+                type: string
+              duration:
+                type: string
+        notes:
+          type: string
+      example:
+        visitId: "v_64f1a2b3c4d5e6f7g8h9i0j1"
+        date: "2024-01-15T10:00:00.000Z"
+        doctorId: "64f1a2b3c4d5e6f7g8h9i0j2"
+        nurseId: "64f1a2b3c4d5e6f7g8h9i0j3"
+        diagnosis: ["Hypertension", "Diabetes"]
+        symptoms: ["Headache", "Fatigue"]
+        treatments:
+          - name: "Metformin"
+            dosage: "500mg"
+            duration: "30 days"
+        notes: "Patient responding well to treatment"
+
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: string
+        patient:
+          type: string
+          description: Patient ID
+        doctor:
+          type: string
+          description: Doctor ID
+        nurse:
+          type: string
+          nullable: true
+          description: Nurse ID
+        secretary:
+          type: string
+          nullable: true
+          description: Secretary ID
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, in-progress, completed, cancelled, no-show]
+        reason:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      example:
+        id: "64f1a2b3c4d5e6f7g8h9i0j1"
+        patient: "64f1a2b3c4d5e6f7g8h9i0j2"
+        doctor: "64f1a2b3c4d5e6f7g8h9i0j3"
+        nurse: "64f1a2b3c4d5e6f7g8h9i0j4"
+        startTime: "2024-01-15T10:00:00.000Z"
+        endTime: "2024-01-15T10:30:00.000Z"
+        status: "scheduled"
+        reason: "Regular checkup"
+        notes: "Follow-up appointment"
+
+    AppointmentCreate:
+      type: object
+      required: [doctorId, startTime, endTime, reason]
+      properties:
+        doctorId:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        notes:
+          type: string
+      example:
+        doctorId: "64f1a2b3c4d5e6f7g8h9i0j3"
+        startTime: "2024-01-15T10:00:00.000Z"
+        endTime: "2024-01-15T10:30:00.000Z"
+        reason: "Regular checkup"
+        notes: "Annual checkup"
+
+    Medication:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          description: Medication name
+        code:
+          type: string
+          description: Medication code
+        description:
+          type: string
+          description: Medication description
+        stockQuantity:
+          type: integer
+          minimum: 0
+          description: Available stock quantity
+        unit:
+          type: string
+          description: Unit of measurement
+        price:
+          type: number
+          minimum: 0
+          description: Price per unit
+        requiresPrescription:
+          type: boolean
+          description: Whether prescription is required
+        category:
+          type: string
+          description: Medication category
+        supplier:
+          type: string
+          description: Supplier name
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      example:
+        id: "64f1a2b3c4d5e6f7g8h9i0j1"
+        name: "Paracetamol 500mg"
+        code: "PARA_500"
+        description: "Pain reliever and fever reducer"
+        stockQuantity: 100
+        unit: "box"
+        price: 15.50
+        requiresPrescription: true
+        category: "Analgesics"
+        supplier: "PharmaCorp"
+        createdAt: "2024-01-15T10:00:00.000Z"
+        updatedAt: "2024-01-15T10:00:00.000Z"
+
+    PrescriptionMedication:
+      type: object
+      required: [medicationName, quantity, dosage]
+      properties:
+        medicationName:
+          type: string
+          description: Name of the medication
+        quantity:
+          type: integer
+          minimum: 1
+          description: Number of units
+        dosage:
+          type: string
+          description: Dosage information
+        duration:
+          type: string
+          description: Duration of treatment
+        notes:
+          type: string
+          description: Additional notes
+      example:
+        medicationName: "Paracetamol 500mg"
+        quantity: 2
+        dosage: "500mg"
+        duration: "7 days"
+        notes: "Take after meals"
+
+    PrescriptionCreate:
+      type: object
+      required: [patientName, doctorName, clinicCode, medications]
+      properties:
+        patientName:
+          type: string
+          description: Full name of the patient
+        patientAge:
+          type: integer
+          minimum: 0
+          maximum: 150
+          description: Age of the patient
+        patientPhone:
+          type: string
+          description: Patient's phone number
+        doctorName:
+          type: string
+          description: Name of the prescribing doctor
+        clinicName:
+          type: string
+          description: Name of the clinic
+        clinicCode:
+          type: string
+          description: Unique clinic identifier
+        medications:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrescriptionMedication'
+          minItems: 1
+          description: Array of medications
+        prescriptionNotes:
+          type: string
+          description: General prescription notes
+      example:
+        patientName: "John Doe"
+        patientAge: 30
+        patientPhone: "0123456789"
+        doctorName: "Dr. Sarah Ahmed"
+        clinicName: "Healthcare Care Clinic"
+        clinicCode: "CLINIC_001"
+        medications:
+          - medicationName: "Paracetamol 500mg"
+            quantity: 2
+            dosage: "500mg"
+            duration: "7 days"
+            notes: "Take after meals"
+        prescriptionNotes: "Patient has headache"
+
+    Prescription:
+      type: object
+      properties:
+        id:
+          type: string
+        prescriptionId:
+          type: string
+          description: Unique prescription identifier
+        patientId:
+          type: string
+        patientName:
+          type: string
+        patientAge:
+          type: integer
+        patientPhone:
+          type: string
+        doctorName:
+          type: string
+        doctorLicense:
+          type: string
+        clinicName:
+          type: string
+        clinicCode:
+          type: string
+        medications:
+          type: array
+          items:
+            type: object
+            properties:
+              medicationId:
+                type: string
+              medicationName:
+                type: string
+              quantity:
+                type: integer
+              dosage:
+                type: string
+              duration:
+                type: string
+              notes:
+                type: string
+              price:
+                type: number
+              totalPrice:
+                type: number
+        prescriptionNotes:
+          type: string
+        prescriptionDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, processing, ready, completed, cancelled]
+        totalCost:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        processedBy:
+          type: string
+          nullable: true
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+        readyAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      example:
+        id: "64f1a2b3c4d5e6f7g8h9i0j1"
+        prescriptionId: "PRESC_1705123456789_abc123def"
+        patientName: "John Doe"
+        patientAge: 30
+        doctorName: "Dr. Sarah Ahmed"
+        clinicCode: "CLINIC_001"
+        medications:
+          - medicationId: "64f1a2b3c4d5e6f7g8h9i0j1"
+            medicationName: "Paracetamol 500mg"
+            quantity: 2
+            dosage: "500mg"
+            price: 15.50
+            totalPrice: 31.00
+        status: "pending"
+        totalCost: 31.00
+        prescriptionDate: "2024-01-15T10:00:00.000Z"
+
+    PrescriptionStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, processing, ready, completed, cancelled]
+          description: New prescription status
+        notes:
+          type: string
+          description: Additional notes about status change
+      example:
+        status: "ready"
+        notes: "Prescription is ready for pickup"
+
+    Client:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          description: Clinic name
+        clinicCode:
+          type: string
+          description: Unique clinic identifier
+        contactPerson:
+          type: string
+          description: Contact person name
+        phone:
+          type: string
+          description: Contact phone number
+        address:
+          type: string
+          description: Clinic address
+        status:
+          type: string
+          enum: [active, inactive]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      example:
+        id: "64f1a2b3c4d5e6f7g8h9i0j1"
+        name: "Healthcare Care Clinic"
+        clinicCode: "CLINIC_001"
+        contactPerson: "Dr. Ahmed Mohammed"
+        phone: "0123456789"
+        address: "King Fahd Street, Riyadh, Saudi Arabia"
+        status: "active"
+
+    PaginatedResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of items
+        page:
+          type: integer
+          description: Current page number
+        perPage:
+          type: integer
+          description: Items per page
+        data:
+          type: array
+          items: {}
+          description: Array of items
+
+  parameters:
+    pageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+      description: Page number for pagination
+    perPageParam:
+      name: perPage
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: Number of items per page
+    idParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Resource identifier
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Register new patient
+      description: Register a new patient account with email verification
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegister'
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          userId:
+                            type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: User login
+      description: Authenticate user and receive JWT tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLogin'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: User logout
+      description: Logout user and invalidate tokens
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Refresh access token
+      description: Refresh expired access token using refresh token
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/verify-email/{token}:
+    get:
+      tags: [auth]
+      summary: Verify email address
+      description: Verify user email address using verification token
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Email verification token
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/forgot-password:
+    post:
+      tags: [auth]
+      summary: Request password reset
+      description: Send password reset email to user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Email not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/reset-password/{token}:
+    post:
+      tags: [auth]
+      summary: Reset password
+      description: Reset user password using reset token
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Password reset token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  minLength: 6
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # User Management Endpoints
+  /user/me:
+    get:
+      tags: [users]
+      summary: Get current user profile
+      description: Get profile information of the authenticated user
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [users]
+      summary: Update current user profile
+      description: Update profile information of the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Doctor Pharmacy Integration Endpoints
+  /doctor/medications/search:
+    get:
+      tags: [pharmacy, medications]
+      summary: Search medications in pharmacy
+      description: Search for medications available in the pharmacy system
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search term for medication name
+      responses:
+        '200':
+          description: Medications found successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/SuccessResponse'
+                          - type: object
+                            properties:
+                              data:
+                                allOf:
+                                  - $ref: '#/components/schemas/PaginatedResponse'
+                                  - type: object
+                                    properties:
+                                      data:
+                                        type: array
+                                        items:
+                                          $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Pharmacy connection error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /doctor/medications/available:
+    get:
+      tags: [pharmacy, medications]
+      summary: Get available medications
+      description: Get all available medications from the pharmacy
+      responses:
+        '200':
+          description: Available medications retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/SuccessResponse'
+                          - type: object
+                            properties:
+                              data:
+                                allOf:
+                                  - $ref: '#/components/schemas/PaginatedResponse'
+                                  - type: object
+                                    properties:
+                                      data:
+                                        type: array
+                                        items:
+                                          $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Pharmacy connection error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /doctor/prescriptions/send-to-pharmacy:
+    post:
+      tags: [pharmacy, prescriptions]
+      summary: Send prescription to pharmacy
+      description: Send a prescription to the pharmacy system for processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrescriptionCreate'
+      responses:
+        '200':
+          description: Prescription sent to pharmacy successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/SuccessResponse'
+                          - type: object
+                            properties:
+                              data:
+                                type: object
+                                properties:
+                                  prescriptionId:
+                                    type: string
+                                  status:
+                                    type: string
+                                  totalCost:
+                                    type: number
+                                  estimatedReadyTime:
+                                    type: string
+                                    format: date-time
+                                  medications:
+                                    type: array
+                                    items:
+                                      type: object
+        '400':
+          description: Missing required fields or invalid medication data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Pharmacy connection error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Patient Endpoints
+  /patient/appointments:
+    get:
+      tags: [patients, appointments]
+      summary: Get patient appointments
+      description: Get all appointments for the authenticated patient
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/perPageParam'
+      responses:
+        '200':
+          description: Appointments retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PaginatedResponse'
+                          - type: object
+                            properties:
+                              data:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Appointment'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags: [patients, appointments]
+      summary: Create new appointment
+      description: Create a new appointment for the authenticated patient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentCreate'
+      responses:
+        '201':
+          description: Appointment created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Appointment'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Appointment conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /patient/appointments/{id}/cancel:
+    patch:
+      tags: [patients, appointments]
+      summary: Cancel appointment
+      description: Cancel an appointment for the authenticated patient
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Appointment cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Appointment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /patient/record/me:
+    get:
+      tags: [patients]
+      summary: Get patient medical record
+      description: Get medical record of the authenticated patient
+      responses:
+        '200':
+          description: Medical record retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PatientRecord'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /patient/notifications/me:
+    get:
+      tags: [patients]
+      summary: Get patient notifications
+      description: Get notifications for the authenticated patient
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Doctor Endpoints
+  /doctor/profile/me:
+    get:
+      tags: [doctors]
+      summary: Get doctor profile
+      description: Get profile information of the authenticated doctor
+      responses:
+        '200':
+          description: Doctor profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Doctor'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [doctors]
+      summary: Update doctor profile
+      description: Update profile information of the authenticated doctor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                specialization:
+                  type: string
+                workingHours:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: Doctor profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Doctor'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /doctor/appointments/me:
+    get:
+      tags: [doctors, appointments]
+      summary: Get doctor appointments
+      description: Get all appointments for the authenticated doctor
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/perPageParam'
+      responses:
+        '200':
+          description: Appointments retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PaginatedResponse'
+                          - type: object
+                            properties:
+                              data:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Appointment'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /doctor/appointments/{id}/status:
+    patch:
+      tags: [doctors, appointments]
+      summary: Update appointment status
+      description: Update the status of an appointment
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [scheduled, in-progress, completed, cancelled, no-show]
+      responses:
+        '200':
+          description: Appointment status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Appointment'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Appointment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /doctor/patients/{id}/record:
+    get:
+      tags: [doctors, patients]
+      summary: Get patient record
+      description: Get medical record of a specific patient
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Patient record retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PatientRecord'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /doctor/patients/{id}/visits:
+    post:
+      tags: [doctors, patients]
+      summary: Add patient visit
+      description: Add a new visit record for a patient
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Visit'
+      responses:
+        '201':
+          description: Visit added successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Visit'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Nurse Endpoints
+  /nurse/profile/me:
+    get:
+      tags: [nurses]
+      summary: Get nurse profile
+      description: Get profile information of the authenticated nurse
+      responses:
+        '200':
+          description: Nurse profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /nurse/appointments/me:
+    get:
+      tags: [nurses, appointments]
+      summary: Get nurse appointments
+      description: Get all appointments assigned to the authenticated nurse
+      responses:
+        '200':
+          description: Appointments retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Appointment'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /nurse/patients/me:
+    get:
+      tags: [nurses, patients]
+      summary: Get assigned patients
+      description: Get all patients assigned to the authenticated nurse
+      responses:
+        '200':
+          description: Patients retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Patient'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Secretary Endpoints
+  /secretary/profile/me:
+    get:
+      tags: [secretaries]
+      summary: Get secretary profile
+      description: Get profile information of the authenticated secretary
+      responses:
+        '200':
+          description: Secretary profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /secretary/appointments:
+    get:
+      tags: [secretaries, appointments]
+      summary: Get all appointments
+      description: Get all appointments in the system
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/perPageParam'
+      responses:
+        '200':
+          description: Appointments retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PaginatedResponse'
+                          - type: object
+                            properties:
+                              data:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Appointment'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /secretary/patients:
+    get:
+      tags: [secretaries, patients]
+      summary: Get all patients
+      description: Get all patients in the system
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/perPageParam'
+      responses:
+        '200':
+          description: Patients retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PaginatedResponse'
+                          - type: object
+                            properties:
+                              data:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Patient'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Admin Endpoints
+  /admin/users:
+    get:
+      tags: [admin, users]
+      summary: Get all users
+      description: Get all users in the system (admin only)
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/perPageParam'
+        - name: role
+          in: query
+          schema:
+            type: string
+          description: Filter by user role
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PaginatedResponse'
+                          - type: object
+                            properties:
+                              data:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags: [admin, users]
+      summary: Create new user
+      description: Create a new user account (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthRegister'
+                - type: object
+                  properties:
+                    roleId:
+                      type: string
+                      description: Role ID for the new user
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/users/{id}:
+    get:
+      tags: [admin, users]
+      summary: Get user by ID
+      description: Get user information by ID (admin only)
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [admin, users]
+      summary: Update user
+      description: Update user information (admin only)
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [active, suspended]
+                fullName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags: [admin, users]
+      summary: Delete user
+      description: Soft delete a user account (admin only)
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '204':
+          description: User deleted successfully
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/logs:
+    get:
+      tags: [admin]
+      summary: Get system logs
+      description: Get system audit logs (admin only)
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/perPageParam'
+      responses:
+        '200':
+          description: Logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PaginatedResponse'
+                          - type: object
+                            properties:
+                              data:
+                                type: array
+                                items:
+                                  type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/notifications:
+    get:
+      tags: [admin]
+      summary: Get all notifications
+      description: Get all system notifications (admin only)
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/perPageParam'
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PaginatedResponse'
+                          - type: object
+                            properties:
+                              data:
+                                type: array
+                                items:
+                                  type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Pharmacy Authentication Endpoints
+  /auth/register:
+    post:
+      tags: [pharmacy, auth]
+      summary: Register pharmacy user
+      description: Register a new pharmacy user account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, password]
+              properties:
+                fullName:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  description: Full name of the user
+                email:
+                  type: string
+                  format: email
+                  description: Email address
+                password:
+                  type: string
+                  minLength: 6
+                  description: Password
+                role:
+                  type: string
+                  enum: [admin, pharmacist, staff]
+                  default: staff
+                  description: User role
+              example:
+                fullName: "John Pharmacist"
+                email: "john@pharmacy.com"
+                password: "password123"
+                role: "pharmacist"
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              fullName:
+                                type: string
+                              email:
+                                type: string
+                              role:
+                                type: string
+                              status:
+                                type: string
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [pharmacy, auth]
+      summary: Pharmacy user login
+      description: Authenticate pharmacy user and receive JWT tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              example:
+                email: "john@pharmacy.com"
+                password: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              fullName:
+                                type: string
+                              email:
+                                type: string
+                              role:
+                                type: string
+                              status:
+                                type: string
+                              lastLogin:
+                                type: string
+                                format: date-time
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: string
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      tags: [pharmacy, auth]
+      summary: Refresh pharmacy access token
+      description: Refresh expired access token using refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: string
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [pharmacy, auth]
+      summary: Pharmacy user logout
+      description: Logout pharmacy user and invalidate tokens
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/profile:
+    get:
+      tags: [pharmacy, auth]
+      summary: Get pharmacy user profile
+      description: Get profile information of the authenticated pharmacy user
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              fullName:
+                                type: string
+                              email:
+                                type: string
+                              role:
+                                type: string
+                              status:
+                                type: string
+                              isEmailVerified:
+                                type: boolean
+                              lastLogin:
+                                type: string
+                                format: date-time
+                              createdAt:
+                                type: string
+                                format: date-time
+                              updatedAt:
+                                type: string
+                                format: date-time
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [pharmacy, auth]
+      summary: Update pharmacy user profile
+      description: Update profile information of the authenticated pharmacy user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              fullName:
+                                type: string
+                              email:
+                                type: string
+                              role:
+                                type: string
+                              status:
+                                type: string
+        '400':
+          description: Invalid email format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Pharmacy Admin Management Endpoints
+  /admin/users:
+    get:
+      tags: [pharmacy, admin]
+      summary: Get all pharmacy users
+      description: Get all pharmacy users in the system (admin only)
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/perPageParam'
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [admin, pharmacist, staff]
+          description: Filter by user role
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, suspended]
+          description: Filter by user status
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by name or email
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PaginatedResponse'
+                          - type: object
+                            properties:
+                              data:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                    fullName:
+                                      type: string
+                                    email:
+                                      type: string
+                                    role:
+                                      type: string
+                                    status:
+                                      type: string
+                                    isEmailVerified:
+                                      type: boolean
+                                    lastLogin:
+                                      type: string
+                                      format: date-time
+                                    createdAt:
+                                      type: string
+                                      format: date-time
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags: [pharmacy, admin]
+      summary: Create new pharmacy user
+      description: Create a new pharmacy user account (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, password, role]
+              properties:
+                fullName:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+                role:
+                  type: string
+                  enum: [admin, pharmacist, staff]
+              example:
+                fullName: "Jane Pharmacist"
+                email: "jane@pharmacy.com"
+                password: "password123"
+                role: "pharmacist"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              fullName:
+                                type: string
+                              email:
+                                type: string
+                              role:
+                                type: string
+                              status:
+                                type: string
+                              createdAt:
+                                type: string
+                                format: date-time
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/users/stats:
+    get:
+      tags: [pharmacy, admin]
+      summary: Get pharmacy user statistics
+      description: Get user statistics and analytics (admin only)
+      responses:
+        '200':
+          description: User statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          stats:
+                            type: object
+                            properties:
+                              totalUsers:
+                                type: integer
+                              activeUsers:
+                                type: integer
+                              adminUsers:
+                                type: integer
+                              pharmacistUsers:
+                                type: integer
+                              staffUsers:
+                                type: integer
+                          recentUsers:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                fullName:
+                                  type: string
+                                email:
+                                  type: string
+                                role:
+                                  type: string
+                                createdAt:
+                                  type: string
+                                  format: date-time
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/users/{id}:
+    get:
+      tags: [pharmacy, admin]
+      summary: Get pharmacy user by ID
+      description: Get pharmacy user information by ID (admin only)
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              fullName:
+                                type: string
+                              email:
+                                type: string
+                              role:
+                                type: string
+                              status:
+                                type: string
+                              isEmailVerified:
+                                type: boolean
+                              lastLogin:
+                                type: string
+                                format: date-time
+                              createdAt:
+                                type: string
+                                format: date-time
+                              updatedAt:
+                                type: string
+                                format: date-time
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [pharmacy, admin]
+      summary: Update pharmacy user
+      description: Update pharmacy user information (admin only)
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [admin, pharmacist, staff]
+                status:
+                  type: string
+                  enum: [active, inactive, suspended]
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              fullName:
+                                type: string
+                              email:
+                                type: string
+                              role:
+                                type: string
+                              status:
+                                type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags: [pharmacy, admin]
+      summary: Delete pharmacy user
+      description: Delete a pharmacy user account (admin only)
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Cannot delete your own account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/users/{id}/password:
+    put:
+      tags: [pharmacy, admin]
+      summary: Change pharmacy user password
+      description: Change password for a pharmacy user (admin only)
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newPassword]
+              properties:
+                newPassword:
+                  type: string
+                  minLength: 6
+                  description: New password
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: New password is required or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Pharmacy Medication Management Endpoints
+  /medications:
+    get:
+      tags: [pharmacy, medications]
+      summary: Get all medications
+      description: Get all medications with optional filtering and pagination
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/perPageParam'
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by medication name, code, or description
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by medication category
+        - name: requiresPrescription
+          in: query
+          schema:
+            type: boolean
+          description: Filter by prescription requirement
+        - name: inStock
+          in: query
+          schema:
+            type: boolean
+          description: Filter by stock availability
+      responses:
+        '200':
+          description: Medications retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PaginatedResponse'
+                          - type: object
+                            properties:
+                              data:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Staff access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags: [pharmacy, medications]
+      summary: Create new medication
+      description: Create a new medication in the pharmacy inventory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  description: Medication name
+                code:
+                  type: string
+                  description: Medication code
+                description:
+                  type: string
+                  description: Medication description
+                stockQuantity:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Initial stock quantity
+                unit:
+                  type: string
+                  default: "unit"
+                  description: Unit of measurement
+                price:
+                  type: number
+                  minimum: 0
+                  default: 0
+                  description: Price per unit
+                requiresPrescription:
+                  type: boolean
+                  default: true
+                  description: Whether prescription is required
+                category:
+                  type: string
+                  description: Medication category
+                supplier:
+                  type: string
+                  description: Supplier name
+              example:
+                name: "Aspirin 100mg"
+                code: "ASP_100"
+                description: "Pain reliever and anti-inflammatory"
+                stockQuantity: 50
+                unit: "box"
+                price: 12.50
+                requiresPrescription: true
+                category: "Analgesics"
+                supplier: "PharmaCorp"
+      responses:
+        '201':
+          description: Medication created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          medication:
+                            $ref: '#/components/schemas/Medication'
+        '400':
+          description: Medication name is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Staff access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Medication with this name or code already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /medications/stats:
+    get:
+      tags: [pharmacy, medications]
+      summary: Get medication statistics
+      description: Get medication inventory statistics and analytics
+      responses:
+        '200':
+          description: Medication statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          stats:
+                            type: object
+                            properties:
+                              totalMedications:
+                                type: integer
+                              inStockMedications:
+                                type: integer
+                              outOfStockMedications:
+                                type: integer
+                              prescriptionRequired:
+                                type: integer
+                              overTheCounter:
+                                type: integer
+                              totalInventoryValue:
+                                type: number
+                          categoryStats:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                _id:
+                                  type: string
+                                count:
+                                  type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Staff access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /medications/low-stock:
+    get:
+      tags: [pharmacy, medications]
+      summary: Get low stock medications
+      description: Get medications with low stock levels
+      parameters:
+        - name: threshold
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 0
+          description: Stock threshold for low stock alert
+      responses:
+        '200':
+          description: Low stock medications retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          medications:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Medication'
+                          threshold:
+                            type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Staff access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /medications/{id}:
+    get:
+      tags: [pharmacy, medications]
+      summary: Get medication by ID
+      description: Get medication information by ID
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Medication retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          medication:
+                            $ref: '#/components/schemas/Medication'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Staff access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Medication not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [pharmacy, medications]
+      summary: Update medication
+      description: Update medication information
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                code:
+                  type: string
+                description:
+                  type: string
+                stockQuantity:
+                  type: integer
+                  minimum: 0
+                unit:
+                  type: string
+                price:
+                  type: number
+                  minimum: 0
+                requiresPrescription:
+                  type: boolean
+                category:
+                  type: string
+                supplier:
+                  type: string
+      responses:
+        '200':
+          description: Medication updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          medication:
+                            $ref: '#/components/schemas/Medication'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Staff access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Medication not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags: [pharmacy, medications]
+      summary: Delete medication
+      description: Delete a medication from inventory
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: Medication deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Staff access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Medication not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /medications/{id}/stock:
+    put:
+      tags: [pharmacy, medications]
+      summary: Update medication stock
+      description: Update medication stock quantity
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stockQuantity]
+              properties:
+                stockQuantity:
+                  type: integer
+                  description: New stock quantity or quantity to add/subtract
+                operation:
+                  type: string
+                  enum: [set, add, subtract]
+                  default: set
+                  description: Operation type for stock update
+              example:
+                stockQuantity: 100
+                operation: "set"
+      responses:
+        '200':
+          description: Stock updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          medication:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              name:
+                                type: string
+                              stockQuantity:
+                                type: integer
+                              lastUpdatedBy:
+                                type: string
+        '400':
+          description: Stock quantity is required or insufficient stock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Staff access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Medication not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Pharmacy Prescription Management Endpoints (Simple MVP)
+  /prescriptions:
+    post:
+      tags: [pharmacy, prescriptions]
+      summary: Create new prescription
+      description: Create a new prescription in the pharmacy system (from clinic)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrescriptionCreate'
+      responses:
+        '201':
+          description: Prescription created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          prescriptionId:
+                            type: string
+                          status:
+                            type: string
+                          totalCost:
+                            type: number
+                          estimatedReadyTime:
+                            type: string
+                            format: date-time
+                          medications:
+                            type: array
+                            items:
+                              type: object
+        '400':
+          description: Missing required fields or invalid medication data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Medication not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags: [pharmacy, prescriptions]
+      summary: Get all prescriptions
+      description: Get all prescriptions with optional filtering
+      security: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, ready, completed, cancelled]
+          description: Filter by prescription status
+        - name: patientName
+          in: query
+          schema:
+            type: string
+          description: Filter by patient name
+        - name: clinicCode
+          in: query
+          schema:
+            type: string
+          description: Filter by clinic code
+      responses:
+        '200':
+          description: Prescriptions retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Prescription'
+
+  /prescriptions/search/{patientName}:
+    get:
+      tags: [pharmacy, prescriptions]
+      summary: Search prescription by patient name
+      description: Search for prescriptions by patient name
+      security: []
+      parameters:
+        - name: patientName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Patient name to search for
+      responses:
+        '200':
+          description: Prescriptions found successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Prescription'
+        '404':
+          description: No prescriptions found for this patient
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /prescriptions/{id}/status:
+    put:
+      tags: [pharmacy, prescriptions]
+      summary: Update prescription status
+      description: Update the status of a prescription
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrescriptionStatusUpdate'
+      responses:
+        '200':
+          description: Prescription status updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          prescriptionId:
+                            type: string
+                          status:
+                            type: string
+                          notes:
+                            type: string
+        '400':
+          description: Status is required or invalid status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Prescription not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+externalDocs:
+  description: CareFlow EHR & Pharmacy Integration Documentation
+  url: https://github.com/careflow/ehr-pharmacy-integration
