@@ -2275,7 +2275,7 @@ paths:
                 $ref: '#/components/schemas/Error'
 
   # Pharmacy Admin Management Endpoints
-  /admin/users:
+  /pharmacy/admin/users:
     get:
       tags: [pharmacy, admin]
       summary: Get all pharmacy users
@@ -2435,7 +2435,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /admin/users/stats:
+  /pharmacy/admin/users/stats:
     get:
       tags: [pharmacy, admin]
       summary: Get pharmacy user statistics
@@ -2493,7 +2493,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /admin/users/{id}:
+  /pharmacy/admin/users/{id}:
     get:
       tags: [pharmacy, admin]
       summary: Get pharmacy user by ID
@@ -2669,7 +2669,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /admin/users/{id}/password:
+  /pharmacy/admin/users/{id}/password:
     put:
       tags: [pharmacy, admin]
       summary: Change pharmacy user password
