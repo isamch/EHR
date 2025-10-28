@@ -1968,7 +1968,7 @@ paths:
                 $ref: '#/components/schemas/Error'
 
   # Pharmacy Authentication Endpoints
-  /auth/register:
+  /pharmacy/auth/register:
     post:
       tags: [pharmacy, auth]
       summary: Register pharmacy user
@@ -2048,7 +2048,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /auth/login:
+  /pharmacy/auth/login:
     post:
       tags: [pharmacy, auth]
       summary: Pharmacy user login
@@ -2110,7 +2110,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /auth/refresh:
+  /pharmacy/auth/refresh:
     post:
       tags: [pharmacy, auth]
       summary: Refresh pharmacy access token
@@ -2149,7 +2149,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /auth/logout:
+  /pharmacy/auth/logout:
     post:
       tags: [pharmacy, auth]
       summary: Pharmacy user logout
@@ -2170,7 +2170,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
 
-  /auth/profile:
+  /pharmacy/auth/profile:
     get:
       tags: [pharmacy, auth]
       summary: Get pharmacy user profile
